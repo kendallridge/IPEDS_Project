@@ -1,4 +1,5 @@
 libname IPEDS '~/IPEDS';
+libname project '~/Project';
 options fmtsearch=(IPEDS);
 
 proc sql;
@@ -88,6 +89,26 @@ proc transpose data=modelInfo1(where=(label1 in ('Selection Method','Select Crit
 		out=model1(drop=_name_);
 	var cValue1;
 	id label1;
+run;
+
+proc standard data=IPEDS.regmodel out=project.standardized mean=0 std=1;
+    var cohort
+        GrantRate
+        GrantAvg
+        PellRate
+        LoanRate
+        LoanAvg
+        InStateT
+        InStateF
+        InDistrictTDiff
+        InDistrictFDiff
+        OutStateTDiff
+        OutStateFDiff
+        roomamt
+        boardamt
+        AvgSalary
+        StuFacRatio
+        ScaledHousingCap;
 run;
 
 proc glmselect data=IPEDS.regmodel;

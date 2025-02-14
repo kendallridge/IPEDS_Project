@@ -1,14 +1,14 @@
-%macro ModelSelect(library=IPEDS, dataset=, response=, inter=N, hier=Y, method=stepwise, select=aic, stop=aic, choose=aic, outputData=);
-	/**class and quant have been removed as parameters and will be set globally for multiple calls with %let statements
-			and are expected to be full lists (no shortcuts)**/
+libname Project '~/Project';
+
+%macro ModelSelect(library=Project, class=, quant=, dataset=, response=, inter=N, hier=Y, method=stepwise, select=aic, stop=aic, choose=aic, outputData=);
+	
 proc glmselect data=&library..&dataset;
 	%if(&class ne ) %then %do;
 		class &class;
-	%end;	/**We skip the class statement if no class variables are provided...**/
-	model &response = %if(&class ne ) %then %sysfunc(tranwrd(&class,%str( ),|)) |;/**and, more importantly, skip them and the | in the model**/
+	%end;
+	model &response = %if(&class ne ) %then %sysfunc(tranwrd(&class,%str( ),|)) |;
 																					 %sysfunc(tranwrd(&quant,%str( ),|)) 
-												/**in both lists, the spaces are translated to | -- %str forces the space to be treated as a literal space, not
-															just spacing in the code editor (it's a macro value, so we don't use quotes)**/
+				
 										%if(%upcase(%substr(&inter,1,1)) eq Y) %then @2; 
 											%else @1;/**If inter starts with y/Y, 2-way interactions are in, otherwise no interactions**/
 			 /selection=&method(select=&select stop=&stop choose=&choose)
@@ -41,7 +41,7 @@ quit;
  
 options mprint;
 ods exclude all;
-/**It's a lot easier to paste lists of variables from Excel into a %let--the returns are treated like spaces when the value is defined**/
+
 %let quant=
 Cohort
 GrantRate
@@ -49,10 +49,6 @@ GrantAvg
 PellRate
 LoanRate
 LoanAvg
-InDistrictT
-InDistrictTDiff
-InDistrictF
-InDistrictFDiff
 InStateT
 InStateF
 OutStateT
@@ -76,12 +72,22 @@ c21enprf
 Housing
 board
 ;
+
+%let class2=
+iclevel
+control
+;
  
-%ModelSelect(dataset=regmodel,response=rate,outputData=out1);
-%ModelSelect(dataset=regmodel,response=rate,choose=SBC,outputData=out2);
-%ModelSelect(dataset=regmodel,response=rate,choose=SBC,outputData=out3,inter=yes,hier=no);
+/*%ModelSelect(dataset=standardized,response=rate,outputData=out1);
+%ModelSelect(dataset=standardized,response=rate,choose=SBC,outputData=out2);
+%ModelSelect(dataset=standardized,response=rate,choose=SBC,outputData=out3,inter=yes,hier=no);*/
+
+
+%ModelSelect(dataset=standardized, response=rate, class=&class, quant=&quant, outputData=out1);
+/*%ModelSelect(dataset=standardized, response=rate, class=&class, quant=&quant, choose=SBC, outputData=out2);
+%ModelSelect(dataset=standardized, response=rate, class=&class2, quant=&quant, choose=SBC, outputData=out3, inter=yes, hier=no);*/
 
 data modelresults;
 	length class quant parameter $500;/**these could have different lengths, so we set something long prior to assembly**/
-	set out1 out2 out3;
+	set out1;
 run;
