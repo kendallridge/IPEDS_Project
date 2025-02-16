@@ -18,7 +18,8 @@ proc glmselect data=&library..&dataset;
 	ods output modelInfo=modelInfo
 						NObs=Obs
 						SelectionSummary=Selection
-						ParameterEstimates=Estimates;				
+						ParameterEstimates=Estimates;
+									
 run;
  
 proc transpose data=modelInfo(where=(label1 in ('Selection Method','Select Criterion','Stop Criterion','Choose Criterion'))) 
@@ -74,9 +75,19 @@ board
 ;
 
 %let class2=
-iclevel
-control
+c21enprf
 ;
+
+%let quant2=
+inStateT
+cohort
+PellRate
+AvgSalary
+GrantRate
+InStateF
+LoanRate
+;
+
  
 /*%ModelSelect(dataset=standardized,response=rate,outputData=out1);
 %ModelSelect(dataset=standardized,response=rate,choose=SBC,outputData=out2);
@@ -84,10 +95,19 @@ control
 
 
 %ModelSelect(dataset=standardized, response=rate, class=&class, quant=&quant, outputData=out1);
-/*%ModelSelect(dataset=standardized, response=rate, class=&class, quant=&quant, choose=SBC, outputData=out2);
-%ModelSelect(dataset=standardized, response=rate, class=&class2, quant=&quant, choose=SBC, outputData=out3, inter=yes, hier=no);*/
+%ModelSelect(dataset=standardized, response=rate, class=&class2, quant=&quant2, outputData=out2, inter=yes);
+%ModelSelect(dataset=standardized, response=rate, class=&class, quant=&quant, outputData=out3, inter=yes);
 
 data modelresults;
 	length class quant parameter $500;/**these could have different lengths, so we set something long prior to assembly**/
-	set out1;
+	set out1(in=one) out2 (in=two) out3 (in =three);
+    if one then source = "Table1";
+    else if two then source = "Table2";
+    else if three then source = "Table3";	
+run;
+
+proc sort data=modelresults out=project.sorted_results;
+
+  by criterionvalue;
+
 run;
